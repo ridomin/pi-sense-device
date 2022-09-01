@@ -1,0 +1,21 @@
+﻿{
+  "profiles": {
+    "localhost": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "ConnectionStrings__cs": "HostName=localhost;UserName=user;Password=password;TcpPort=1883;UseTls=false;ClientId=pisense-loc"
+      }
+    },
+    "dps": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "ConnectionStrings__cs": "IdScope=0ne006CAFFC;DeviceId=RidoPi;SharedAccessKey=invalid;ClientId=RidoPi",
+        "masterKey": "vyB2VqViNdAILXTw5SRiKNiSrrfgPLOy9/sDu2d2ZaP/NSD3Y/0NNrnJ2O7S6wjdxLTCYTIpb3kNsHpipts7ew=="
+      }
+    }
+  }
+}
