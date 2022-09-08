@@ -12,6 +12,11 @@
       "schema": "string"
     },
     {
+      "@type": "Property",
+      "name": "ipaddr",
+      "schema": "string"
+    },
+    {
       "@type": [ "Property", "TimeSpan" ],
       "name": "interval",
       "schema": "integer",

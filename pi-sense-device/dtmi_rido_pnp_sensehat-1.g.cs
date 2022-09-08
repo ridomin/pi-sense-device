@@ -11,6 +11,7 @@ public interface Isensehat
     public IMqttBaseClient Connection { get; }
     public string InitialState { get; }
     public IReadOnlyProperty<string> Property_piri { get; set; }
+    public IReadOnlyProperty<string> Property_ipaddr { get; set; }
     public IWritableProperty<int> Property_interval { get; set; }
     public ITelemetry<double> Telemetry_t1 { get; set; }
     public ITelemetry<double> Telemetry_t2 { get; set; }

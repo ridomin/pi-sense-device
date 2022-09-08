@@ -10,9 +10,10 @@
 
   <ItemGroup>
 	<PackageReference Include="Iot.Device.Bindings" Version="2.1.0-*" />
+	<PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.21.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
-    <PackageReference Include="Rido.Mqtt.AzIoTClient" Version="0.3.10" />
-    <PackageReference Include="Rido.Mqtt.Client" Version="0.3.10" />
+    <PackageReference Include="Rido.Mqtt.AzIoTClient" Version="0.4.*" />
+    <PackageReference Include="Rido.Mqtt.Client" Version="0.4.*" />
   </ItemGroup>
 
 	<ItemGroup>

@@ -1,8 +1,12 @@
 using dtmi_rido_pnp_sensehat;
 using Iot.Device.SenseHat;
 using Rido.MqttCore.PnP;
+using System.Net.Sockets;
+using System.Net;
 using System.Runtime.InteropServices;
 using Color = System.Drawing.Color;
+using System.Net.NetworkInformation;
+using Microsoft.ApplicationInsights;
 
 namespace pi_sense_device;
 
@@ -12,13 +16,15 @@ public class Device : BackgroundService
 
     private readonly ILogger<Device> _logger;
     private readonly IConfiguration _configuration;
+    private TelemetryClient _telemetryClient;
 
     private const int default_interval = 5;
 
-    public Device(ILogger<Device> logger, IConfiguration configuration)
+    public Device(ILogger<Device> logger, IConfiguration configuration, TelemetryClient tc)
     {
         _logger = logger;
         _configuration = configuration;
+        _telemetryClient = tc;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -36,12 +42,18 @@ public class Device : BackgroundService
         client.Property_piri.PropertyValue = $"os: {Environment.OSVersion}, proc: {RuntimeInformation.ProcessArchitecture}, clr: {Environment.Version}";
         await client.Property_piri.ReportPropertyAsync(stoppingToken);
 
+        var netInfo = "eth: " + GetLocalIPv4();
+        client.Property_ipaddr.PropertyValue = netInfo;
+        _telemetryClient.TrackTrace(netInfo);
+        await client.Property_ipaddr.ReportPropertyAsync(stoppingToken);
+
         while (!stoppingToken.IsCancellationRequested)
         {
             ArgumentNullException.ThrowIfNull(client);
             if (RuntimeInformation.ProcessArchitecture == Architecture.Arm)
             {
                 using SenseHat sh = new SenseHat();
+                _telemetryClient.TrackMetric("temp1", sh.Temperature.DegreesCelsius);
                 await client.Telemetry_t1.SendTelemetryAsync(sh.Temperature.DegreesCelsius, stoppingToken);
                 await client.Telemetry_t2.SendTelemetryAsync(sh.Temperature2.DegreesCelsius, stoppingToken);
                 await client.Telemetry_h.SendTelemetryAsync(sh.Humidity.Percent, stoppingToken);
@@ -49,14 +61,15 @@ public class Device : BackgroundService
             }    
             else
             {
+                _telemetryClient.TrackMetric("temp1", 2);
                 await client.Telemetry_t1.SendTelemetryAsync(Environment.WorkingSet, stoppingToken);
                 await client.Telemetry_t2.SendTelemetryAsync(Environment.WorkingSet, stoppingToken);
                 await client.Telemetry_h.SendTelemetryAsync(Environment.WorkingSet, stoppingToken);
                 await client.Telemetry_p.SendTelemetryAsync(Environment.WorkingSet, stoppingToken);
                 _logger.LogWarning("not running in ARM");
             }
-            //await client.Telemetry_m.SendTelemetryAsync(sh.MagneticInduction., stoppingToken);
             var interval = client?.Property_interval.PropertyValue?.Value;
+            _logger.LogInformation($"Waiting {interval} s to send telemetry");
             await Task.Delay(interval.HasValue ? interval.Value * 1000 : 1000, stoppingToken);
         }
     }
@@ -64,7 +77,7 @@ public class Device : BackgroundService
     private async Task<PropertyAck<int>> Property_interval_UpdateHandler(PropertyAck<int> p)
     {
         ArgumentNullException.ThrowIfNull(client);
-        
+        _logger.LogInformation($"New prop received");
         var ack = new PropertyAck<int>(p.Name);
 
         if (p.Value > 0)
@@ -91,9 +104,26 @@ public class Device : BackgroundService
     string oldColor = "white";
     private async Task<Cmd_ChangeLCDColor_Response> Cmd_ChangeLCDColor_Handler(Cmd_ChangeLCDColor_Request req)
     {
+        _logger.LogInformation($"New Command received");
         var color = Color.FromName(req.request);
-        using SenseHat sh = new SenseHat();
-        sh.Fill(color);
+
+        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm)
+        {
+            using SenseHat sh = new SenseHat();
+            sh.Fill(color);
+        }
+        else
+        {
+            var orig = Console.BackgroundColor;
+            Console.BackgroundColor = (ConsoleColor)Enum.Parse(typeof(ConsoleColor), req.request, true);
+            for (int i = 0; i < 10; i++)
+            {
+                Console.WriteLine(" ");
+                await Task.Delay(100);
+            }
+            Console.BackgroundColor = orig;
+
+        }    
         var result = new Cmd_ChangeLCDColor_Response()
         {
             response = oldColor
@@ -101,4 +131,33 @@ public class Device : BackgroundService
         oldColor = req.request;
         return await Task.FromResult(result);
     }
+
+    internal static string GetLocalIPv4()
+    {  // Checks your IP adress from the local network connected to a gateway. This to avoid issues with double network cards
+        string output = "";  // default output
+        foreach (NetworkInterface item in NetworkInterface.GetAllNetworkInterfaces()) // Iterate over each network interface
+        {  // Find the network interface which has been provided in the arguments, break the loop if found
+            if (item.OperationalStatus == OperationalStatus.Up)
+            {   // Fetch the properties of this adapter
+                IPInterfaceProperties adapterProperties = item.GetIPProperties();
+                // Check if the gateway adress exist, if not its most likley a virtual network or smth
+                if (adapterProperties.GatewayAddresses.FirstOrDefault() != null)
+                {   // Iterate over each available unicast adresses
+                    foreach (UnicastIPAddressInformation ip in adapterProperties.UnicastAddresses)
+                    {   // If the IP is a local IPv4 adress
+                        if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                        {   // we got a match!
+                            output = ip.Address.ToString();
+                            break;  // break the loop!!
+                        }
+                    }
+                }
+            }
+            // Check if we got a result if so break this method
+            //if (output != "") { break; }
+        }
+        // Return results
+        return output;
+    }
+
 }
