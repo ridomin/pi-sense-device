@@ -1,12 +1,10 @@
 using dtmi_rido_pnp_sensehat;
 using Iot.Device.SenseHat;
+using Microsoft.ApplicationInsights;
 using Rido.MqttCore.PnP;
-using System.Net.Sockets;
-using System.Net;
+using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using Color = System.Drawing.Color;
-using System.Net.NetworkInformation;
-using Microsoft.ApplicationInsights;
 
 namespace pi_sense_device;
 

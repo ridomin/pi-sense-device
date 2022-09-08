@@ -1,21 +1,24 @@
-﻿{
+{
   "profiles": {
     "rido-dev": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development",
         "ConnectionStrings__cs": "HostName=mosquitto.rido.dev;UserName=client1;Password=Pass@Word1;TcpPort=8883;UseTls=true;ClientId=pisense-loc"
-      }
+      },
+      "dotnetRunMessages": true
     },
     "dps": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development",
         "ConnectionStrings__cs": "IdScope=0ne006CAFFC;DeviceId=RidoPi;SharedAccessKey=invalid;ClientId=RidoPi",
         "masterKey": "vyB2VqViNdAILXTw5SRiKNiSrrfgPLOy9/sDu2d2ZaP/NSD3Y/0NNrnJ2O7S6wjdxLTCYTIpb3kNsHpipts7ew=="
-      }
+      },
+      "dotnetRunMessages": true
+    },
+    "Docker": {
+      "commandName": "Docker"
     }
   }
 }
