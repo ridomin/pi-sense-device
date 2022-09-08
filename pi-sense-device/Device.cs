@@ -47,6 +47,7 @@ public class Device : BackgroundService
         _telemetryClient.TrackTrace(netInfo);
         await client.Property_ipaddr.ReportPropertyAsync(stoppingToken);
 
+        double t1 = 21;
         while (!stoppingToken.IsCancellationRequested)
         {
             ArgumentNullException.ThrowIfNull(client);
@@ -62,11 +63,11 @@ public class Device : BackgroundService
             else
             {
                 _telemetryClient.TrackMetric("temp1", 2);
-                await client.Telemetry_t1.SendTelemetryAsync(Environment.WorkingSet, stoppingToken);
-                await client.Telemetry_t2.SendTelemetryAsync(Environment.WorkingSet, stoppingToken);
-                await client.Telemetry_h.SendTelemetryAsync(Environment.WorkingSet, stoppingToken);
-                await client.Telemetry_p.SendTelemetryAsync(Environment.WorkingSet, stoppingToken);
-                _logger.LogWarning("not running in ARM");
+                t1 = GenerateSensorReading(t1, 10, 40);
+                await client.Telemetry_t1.SendTelemetryAsync(t1, stoppingToken);
+                await client.Telemetry_t2.SendTelemetryAsync(GenerateSensorReading(t1, 5, 35), stoppingToken);
+                await client.Telemetry_h.SendTelemetryAsync(Environment.WorkingSet / 1000000, stoppingToken);
+                await client.Telemetry_p.SendTelemetryAsync(Environment.WorkingSet / 1000000, stoppingToken);
             }
             var interval = client?.Property_interval.PropertyValue?.Value;
             _logger.LogInformation($"Waiting {interval} s to send telemetry");
@@ -160,4 +161,13 @@ public class Device : BackgroundService
         return output;
     }
 
+    Random random = new Random();
+    double GenerateSensorReading(double currentValue, double min, double max)
+    {
+        double percentage = 15;
+        double value = currentValue * (1 + (percentage / 100 * (2 * random.NextDouble() - 1)));
+        value = Math.Max(value, min);
+        value = Math.Min(value, max);
+        return value;
+    }
 }
